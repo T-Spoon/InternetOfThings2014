@@ -1,6 +1,11 @@
 /* 
   Requires RGB LCD Library
-
+  
+  A0: First Sensor
+  A1: Second Sensor
+  
+  Pin 4: Touch button to reset counter
+  
 */
 
 #include <rgb_lcd.h>
@@ -8,23 +13,30 @@
 
 rgb_lcd lcd;
 
-const int colorR = 255;
+const int colorR = 0;
 const int colorG = 0;
-const int colorB = 0;
+const int colorB = 255;
 
 const int PIN_LED = 13;
 const int PIN_TOUCH = 4;
 
-const int INPUT_LIGHT = 2;
+const int INPUT_LIGHT_FIRST = 0;
+const int INPUT_LIGHT_SECOND = 1;
 
 const int NUM_PREVIOUS_SENSOR_VALUES = 5;
-const int THRESHOLD = 75;
+const int THRESHOLD = 35;
+const int SENSOR_INTERVAL = 100;
 
+boolean flagOne;
+boolean flagTwo;
 
 int numPeople;
-int previousAverage;
 
-float previousSensorValues[NUM_PREVIOUS_SENSOR_VALUES];
+int curOne;
+int curTwo;
+
+int prevOne;
+int prevTwo;
 
 void setup() {                
   pinMode(PIN_LED, OUTPUT);
@@ -42,31 +54,49 @@ void setup() {
 
 
 void loop() {
-  delay(100);
+  delay(SENSOR_INTERVAL);
+  
   if (isTouchPressed()) {
     numPeople = 0;
   }
   
   // Light
-  int lightSensorValue = analogRead(INPUT_LIGHT); 
-  int light = (int) (1023 - lightSensorValue) * 10 / lightSensorValue;
-  addSensorValue(light);
+  int lightSensorValue = analogRead(INPUT_LIGHT_FIRST); 
+  curOne = (int) (1023 - lightSensorValue) * 10 / lightSensorValue;
+  
+  lightSensorValue = analogRead(INPUT_LIGHT_SECOND); 
+  curTwo = (int) (1023 - lightSensorValue) * 10 / lightSensorValue;  
     
-  Serial.println(light);
-  
-  int average = getAvgSensorValues();
-  
-  Serial.println(average);
+  Serial.println(curOne);
+  Serial.println(curTwo);
   
   // If the difference in the last 2 values is > threshold --> we have a person
-  if(previousSensorValues[NUM_PREVIOUS_SENSOR_VALUES - 1] - previousSensorValues[NUM_PREVIOUS_SENSOR_VALUES - 2] > THRESHOLD) {
-     numPeople++;
+  if(isSensorActivated(prevOne, curOne)) {
+    Serial.println("Sensor One Activated");
+     if(flagTwo) {
+       flagTwo = flagOne = false;
+       numPeople--;
+     } else {
+       flagOne = true;
+     }
   }
+  
+  if(isSensorActivated(prevTwo, curTwo)) {
+    Serial.println("Sensor Two Activated");
+     if(flagOne) {
+       flagTwo = flagOne = false;
+       numPeople++;
+     } else {
+       flagTwo = true;
+     }
+  }
+  
   
   lcd.setCursor(0, 1);
   lcd.print(numPeople);
   
-  previousAverage = average;
+  prevOne = curOne;
+  prevTwo = curTwo;
 }
 
 
@@ -75,25 +105,6 @@ boolean isTouchPressed() {
   return sensorValue > 0.5;
 }
 
-
-// Add value to array of previous values. Last In, First Out.
-void addSensorValue(int value) {
-  for(int i = NUM_PREVIOUS_SENSOR_VALUES - 1; i >= 0; i--) {
-    if(i - 1 > 0) {
-      previousSensorValues[i-1] = previousSensorValues[i];
-    }
-  }
-  
-  previousSensorValues[NUM_PREVIOUS_SENSOR_VALUES - 1] = value;
-}
-
-
-float getAvgSensorValues() {
-  int count = 0;
-  
-  for(int i = 0; i < NUM_PREVIOUS_SENSOR_VALUES; i++) {
-    count += previousSensorValues[i];
-  }
-  
-  return (float) count / (float) NUM_PREVIOUS_SENSOR_VALUES;
+boolean isSensorActivated(int previous, int current) {
+  return previous < THRESHOLD && current - previous > THRESHOLD;
 }
