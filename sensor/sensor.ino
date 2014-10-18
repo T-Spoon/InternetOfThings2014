@@ -20,8 +20,8 @@ const int colorB = 255;
 const int PIN_LED = 13;
 const int PIN_TOUCH = 4;
 
-const int INPUT_LIGHT_FIRST = 0;
-const int INPUT_LIGHT_SECOND = 1;
+const int INPUT_LIGHT_FIRST = 1;
+const int INPUT_LIGHT_SECOND = 3;
 
 const int NUM_PREVIOUS_SENSOR_VALUES = 5;
 const int THRESHOLD = 35;
