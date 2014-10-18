@@ -81,11 +81,11 @@ void loop() {
     resistance=(float)(1023-tempRead)*10000/tempRead; //get the resistance of the sensor;
     temperature = 1 / (log(resistance/10000)/B+1/298.15)-273.15;//convert to temperature via datasheet ;
     
-//    thanks to guys from intel - doesn't work
-//    iotkit.send("temperature sensor", temperature);
+//    iotkit.send("temp", temperature);
+//    iotkit.receive(callback);
+    
     char cmd[50];
     sprintf(cmd, "iotkit-admin observation temp %.2f", temperature);
-    
     system(cmd);
     Serial.println(cmd);
     
@@ -103,4 +103,30 @@ void loop() {
 boolean isTouchPressed() {
     int sensorValue = digitalRead(PIN_TOUCH);
     return sensorValue > 0.5;
+}
+
+void callback(char* json) {
+  Serial.println(json);
+  aJsonObject* parsed = aJson.parse(json);
+  if (&parsed == NULL) {
+    // invalid or empty JSON
+    Serial.println("recieved invalid JSON");
+    return;
+  }
+  aJsonObject* component = aJson.getObjectItem(parsed, "component");
+  aJsonObject* command = aJson.getObjectItem(parsed, "command");
+  if ((component != NULL)) {
+    if (strcmp(component->valuestring, "led") == 0) {
+      if ((command != NULL)) {
+        if (strcmp(command->valuestring, "off") == 0) {
+          pinMode(13, OUTPUT);
+          digitalWrite(13, false);
+        }
+        if (strcmp(command->valuestring, "on") == 0) {
+          pinMode(13, OUTPUT);
+          digitalWrite(13, true);
+        }
+      }
+    }
+  }
 }
