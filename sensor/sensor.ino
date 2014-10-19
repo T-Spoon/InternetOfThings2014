@@ -88,8 +88,8 @@ void loop() {
   //send every number of cycles 
   if (inter % divide == 0) {    
       char cmd[50];
-    //  sprintf(cmd, "iotkit-admin observation temp %.2f", temperature);
-      sprintf(cmd, "'observation temp %.2f' > /tmp/test", temperature);
+      sprintf(cmd, "iotkit-admin observation temp %.2f", temperature);
+//      sprintf(cmd, "/bin/sh -c \"echo 'observation temp %.2f' >> /tmp/test\"", temperature);
       start(cmd);
     //  system(cmd);
       Serial.println(cmd);
@@ -187,7 +187,8 @@ pid_t start(char *cmd) {
     Serial.println(child);
     if(child == 0) {
         //execl("iotkit-admin", cmd, NULL);
-        execl("echo", cmd, NULL);
+        //execl("/bin/sh", cmd, NULL);
+        system(cmd);
         _exit(1);
     }
     return child;
