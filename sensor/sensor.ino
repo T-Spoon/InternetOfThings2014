@@ -64,6 +64,7 @@ void setup() {
   system("iotkit-admin activate 3IWXxyTM > /dev/ttyGS0 2>&1");
   iotkit.begin();
   iotkit.send("{ \"n\": \"temp\", \"t\": \"temperature.v1.0\"}\n");
+  //iotkit.send("{ \"n\": \"people\", \"t\": \"people.v1.0\"}\n");
     
   //iotkit.send("{ \"n\": \"humidity sensor\", \"t\": \"humidity.v1.0\"}\n");
   
@@ -90,9 +91,13 @@ void loop() {
       char cmd[50];
       sprintf(cmd, "iotkit-admin observation temp %.2f", temperature);
 //      sprintf(cmd, "/bin/sh -c \"echo 'observation temp %.2f' >> /tmp/test\"", temperature);
+//      system(cmd);
       start(cmd);
-    //  system(cmd);
       Serial.println(cmd);
+      
+//      sprintf(cmd, "iotkit-admin observation people %d", numPeople);
+//      start(cmd);
+//      Serial.println(cmd);
   }
   inter++;
   
