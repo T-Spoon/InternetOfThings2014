@@ -25,7 +25,7 @@ const int INPUT_LIGHT_SECOND = 1;
 
 const int NUM_PREVIOUS_SENSOR_VALUES = 5;
 const int THRESHOLD = 20;
-const int SENSOR_INTERVAL = 100;
+const int SENSOR_INTERVAL = 50;
 
 boolean flagOne;
 boolean flagTwo;
