@@ -14,9 +14,12 @@
 #include <IoTkit.h>    // include IoTkit.h to use the Intel IoT Kit
 #include <Ethernet.h>  // must be included to use IoTkit
 
+
 IoTkit iotkit;
 
 rgb_lcd lcd;
+int inter = 0;
+const int divide = 20;
 
 const int colorR = 0;
 const int colorG = 0;
@@ -76,15 +79,22 @@ void loop() {
     numPeople = 0;
   }
   
+  float temperature = 0;
   // Temperature
   int tempRead = analogRead(INPUT_TEMPERATURE);
   float resistance = (float) (1023 - tempRead) * 10000 / tempRead;
-  float temperature = 1 / (log(resistance/10000)/B+1/298.15)-273.15; // convert to temperature via datasheet
+  temperature = 1 / (log(resistance/10000)/B+1/298.15)-273.15; // convert to temperature via datasheet
   
-  char cmd[50];
-  sprintf(cmd, "iotkit-admin observation temp %.2f", temperature);
-  //system(cmd);
-  Serial.println(cmd);
+  //send every number of cycles 
+  if (inter % divide == 0) {    
+      char cmd[50];
+    //  sprintf(cmd, "iotkit-admin observation temp %.2f", temperature);
+      sprintf(cmd, "'observation temp %.2f' > /tmp/test", temperature);
+      start(cmd);
+    //  system(cmd);
+      Serial.println(cmd);
+  }
+  inter++;
   
   //iotkit.send("temp", temperature);
   //iotkit.receive(callback);
@@ -168,4 +178,17 @@ void callback(char* json) {
       }
     }
   }
+}
+
+//pid_t start(char *cmd, char **argv, char **envp) {
+pid_t start(char *cmd) {  
+    pid_t child = fork();
+    Serial.println("id");
+    Serial.println(child);
+    if(child == 0) {
+        //execl("iotkit-admin", cmd, NULL);
+        execl("echo", cmd, NULL);
+        _exit(1);
+    }
+    return child;
 }
