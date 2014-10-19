@@ -83,7 +83,7 @@ void loop() {
   
   char cmd[50];
   sprintf(cmd, "iotkit-admin observation temp %.2f", temperature);
-  system(cmd);
+  //system(cmd);
   Serial.println(cmd);
   
   //iotkit.send("temp", temperature);
@@ -123,7 +123,7 @@ void loop() {
   
   // Print Values to LCD
   char buffer[50];
-  sprintf(buffer, "Num People: %d", numPeople);
+  sprintf(buffer, "Num People: %2d", numPeople);
   lcd.setCursor(0, 0);
   lcd.print(buffer);
   sprintf(buffer, "Temp: %.2f", temperature);
