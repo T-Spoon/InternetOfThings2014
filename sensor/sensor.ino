@@ -24,7 +24,7 @@ const int INPUT_LIGHT_FIRST = 0;
 const int INPUT_LIGHT_SECOND = 1;
 
 const int NUM_PREVIOUS_SENSOR_VALUES = 5;
-const int THRESHOLD = 35;
+const int THRESHOLD = 20;
 const int SENSOR_INTERVAL = 100;
 
 boolean flagOne;
@@ -47,7 +47,6 @@ void setup() {
   // set up the LCD's number of columns and rows:
   lcd.begin(16, 2);
   lcd.setRGB(colorR, colorG, colorB);
-  lcd.print("Number of People: ");
   
   delay(1000);
 }
@@ -91,7 +90,9 @@ void loop() {
      }
   }
   
-  
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("Number of People: ");
   lcd.setCursor(0, 1);
   lcd.print(numPeople);
   
