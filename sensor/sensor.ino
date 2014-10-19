@@ -11,6 +11,11 @@
 #include <rgb_lcd.h>
 #include <Wire.h>
 
+#include <IoTkit.h>    // include IoTkit.h to use the Intel IoT Kit
+#include <Ethernet.h>  // must be included to use IoTkit
+
+IoTkit iotkit;
+
 rgb_lcd lcd;
 
 const int colorR = 0;
@@ -20,12 +25,16 @@ const int colorB = 255;
 const int PIN_LED = 13;
 const int PIN_TOUCH = 4;
 
-const int INPUT_LIGHT_FIRST = 1;
-const int INPUT_LIGHT_SECOND = 3;
+const int INPUT_LIGHT_FIRST = 0;
+const int INPUT_LIGHT_SECOND = 1;
+const int INPUT_TEMPERATURE = 2;
 
 const int NUM_PREVIOUS_SENSOR_VALUES = 5;
 const int THRESHOLD = 20;
 const int SENSOR_INTERVAL = 50;
+
+// For temperature conversion
+int B = 3975;
 
 boolean flagOne;
 boolean flagTwo;
@@ -48,6 +57,14 @@ void setup() {
   lcd.begin(16, 2);
   lcd.setRGB(colorR, colorG, colorB);
   
+  //now we will register sensor names
+  system("iotkit-admin activate 3IWXxyTM > /dev/ttyGS0 2>&1");
+  iotkit.begin();
+  iotkit.send("{ \"n\": \"temp\", \"t\": \"temperature.v1.0\"}\n");
+    
+  //iotkit.send("{ \"n\": \"humidity sensor\", \"t\": \"humidity.v1.0\"}\n");
+  
+  
   delay(1000);
 }
 
@@ -58,6 +75,19 @@ void loop() {
   if (isTouchPressed()) {
     numPeople = 0;
   }
+  
+  // Temperature
+  int tempRead = analogRead(INPUT_TEMPERATURE);
+  float resistance = (float) (1023 - tempRead) * 10000 / tempRead;
+  float temperature = 1 / (log(resistance/10000)/B+1/298.15)-273.15; // convert to temperature via datasheet
+  
+  char cmd[50];
+  sprintf(cmd, "iotkit-admin observation temp %.2f", temperature);
+  system(cmd);
+  Serial.println(cmd);
+  
+  //iotkit.send("temp", temperature);
+  //iotkit.receive(callback);
   
   // Light
   int lightSensorValue = analogRead(INPUT_LIGHT_FIRST); 
@@ -90,11 +120,15 @@ void loop() {
      }
   }
   
-  lcd.clear();
+  
+  // Print Values to LCD
+  char buffer[50];
+  sprintf(buffer, "Num People: %d", numPeople);
   lcd.setCursor(0, 0);
-  lcd.print("Number of People: ");
+  lcd.print(buffer);
+  sprintf(buffer, "Temp: %.2f", temperature);
   lcd.setCursor(0, 1);
-  lcd.print(numPeople);
+  lcd.print(buffer);
   
   prevOne = curOne;
   prevTwo = curTwo;
@@ -108,4 +142,30 @@ boolean isTouchPressed() {
 
 boolean isSensorActivated(int previous, int current) {
   return previous < THRESHOLD && current - previous > THRESHOLD;
+}
+
+void callback(char* json) {
+  Serial.println(json);
+  aJsonObject* parsed = aJson.parse(json);
+  if (&parsed == NULL) {
+    // invalid or empty JSON
+    Serial.println("recieved invalid JSON");
+    return;
+  }
+  aJsonObject* component = aJson.getObjectItem(parsed, "component");
+  aJsonObject* command = aJson.getObjectItem(parsed, "command");
+  if ((component != NULL)) {
+    if (strcmp(component->valuestring, "led") == 0) {
+      if ((command != NULL)) {
+        if (strcmp(command->valuestring, "off") == 0) {
+          pinMode(13, OUTPUT);
+          digitalWrite(13, false);
+        }
+        if (strcmp(command->valuestring, "on") == 0) {
+          pinMode(13, OUTPUT);
+          digitalWrite(13, true);
+        }
+      }
+    }
+  }
 }
